@@ -1,0 +1,8 @@
+.empty {
+    color: var(--muted);
+    padding: 12px 0;
+}
+
+.card+.card {
+    margin-top: 16px;
+}
