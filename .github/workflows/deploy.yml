@@ -52,8 +52,15 @@ jobs:
         run: |
           echo "Contents of build directory:"
           ls -la build/ || echo "Build directory not found"
-       
-      # Step 3: Deploy to IIS server
+        
+      # Step 2: Verify build files exist (optional debugging step)
+      - name: Test Server Connection
+        run: |
+          echo "Testing connection to server..."
+          timeout 10 bash -c "</dev/tcp/${{ secrets.SERVER_IP }}/${{ secrets.SERVER_PORT }}" && echo "Connection successful" || echo "Connection failed"
+
+
+      # Step 4: Deploy to IIS server
       - name: Deploy to IIS Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -62,6 +69,7 @@ jobs:
           password: ${{ secrets.SERVER_PASS }}
           source: "build/*"
           target: ${{ secrets.SERVER_PATH }}
+          port: ${{ secrets.SERVER_PORT }}
           strip_components: 1  # This removes the 'build/' prefix from uploaded files
           overwrite: true      # Overwrite existing files on the server
           debug: true
