@@ -64,3 +64,4 @@ jobs:
           target: ${{ secrets.SERVER_PATH }}
           strip_components: 1  # This removes the 'build/' prefix from uploaded files
           overwrite: true      # Overwrite existing files on the server
+          debug: true
