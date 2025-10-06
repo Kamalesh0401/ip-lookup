@@ -59,6 +59,37 @@ jobs:
           echo "Testing connection to server..."
           timeout 10 bash -c "</dev/tcp/${{ secrets.SERVER_IP }}/${{ secrets.SERVER_PORT }}" && echo "Connection successful" || echo "Connection failed"
 
+      # (inside your deploy job, before the appleboy/scp-action step)
+      - name: Install debug tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y dnsutils netcat-openbsd openssh-client sshpass
+
+      - name: Resolve DNS and show route
+        env:
+          HOST: ${{ secrets.SERVER_IP }}   # or SERVER_IP
+        run: |
+          echo "Resolve $HOST"
+          nslookup $HOST || true
+          echo "Host lookup (getent):"
+          getent hosts $HOST || true
+
+      - name: TCP port test (nc)
+        env:
+          HOST: ${{ secrets.SERVER_IP }}
+          PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          echo "Testing TCP $HOST:$PORT"
+          nc -vz $HOST $PORT || (echo "TCP connect failed" && exit 1)
+
+      - name: SSH test (password)
+        env:
+          HOST: ${{ secrets.SERVER_IP }}
+          PORT: ${{ secrets.SERVER_PORT }}
+          USER: ${{ secrets.SERVER_USER }}
+        run: |
+          # Install sshpass above; then:
+          sshpass -p "${{ secrets.SERVER_PASS }}" ssh -oStrictHostKeyChecking=no -oConnectTimeout=10 -p "$PORT" "$USER@$HOST" 'echo SSH_OK' || (echo "SSH handshake failed" && exit 1)
 
       # Step 4: Deploy to IIS server
       - name: Deploy to IIS Server
