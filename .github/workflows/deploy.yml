@@ -3,7 +3,7 @@ name: Build and Deploy React App to IIS (Self-Hosted)
 on:
   push:
     branches:
-      - main   # triggers whenever you push to main branch
+      - master   # triggers whenever you push to main branch
 
 jobs:
   build-and-deploy:
