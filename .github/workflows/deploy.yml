@@ -74,14 +74,6 @@ jobs:
           echo "Host lookup (getent):"
           getent hosts $HOST || true
 
-      - name: TCP port test (nc)
-        env:
-          HOST: ${{ secrets.SERVER_IP }}
-          PORT: ${{ secrets.SERVER_PORT }}
-        run: |
-          echo "Testing TCP $HOST:$PORT"
-          nc -vz $HOST $PORT || (echo "TCP connect failed" && exit 1)
-
       - name: SSH test (password)
         env:
           HOST: ${{ secrets.SERVER_IP }}
