@@ -1,34 +1,30 @@
-name: React CI/CD to IIS
+name: React CI/CD to IIS via WinRM
 
 on:
   push:
     branches:
-      - master # runs when master branch is updated
+      - master # or 'main' depending on your repo
 
 jobs:
-  build-and-test:
+  build:
+    name: Build React App
     runs-on: ubuntu-latest
-    
+
     steps:
-      # Step 1: Checkout repo
       - name: Checkout repository
-        uses: actions/checkout@v3
-       
-      # Step 2: Setup Node.js
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
-       
-      # Step 3: Install dependencies
+
       - name: Install dependencies
-        run: npm install
-       
-      # Step 4: Build React app
+        run: npm ci
+
       - name: Build project
         run: npm run build
-       
-      # Step 5: Upload build as artifact (so deploy job can use it)
+
       - name: Upload production build
         uses: actions/upload-artifact@v4
         with:
@@ -36,63 +32,59 @@ jobs:
           path: build/
 
   deploy:
-    runs-on: ubuntu-latest
-    needs: build-and-test # run only if build job succeeds
-    
+    name: Deploy to IIS via WinRM
+    runs-on: windows-latest
+    needs: build
+    env:
+      IIS_HOST: ${{ secrets.IIS_HOST }}
+      IIS_USER: ${{ secrets.IIS_USER }}
+      IIS_PASSWORD: ${{ secrets.IIS_PASSWORD }}
+      IIS_PATH: ${{ secrets.IIS_PATH }} # e.g. C:\inetpub\wwwroot\cicdreact
+
     steps:
-      # Step 1: Download artifact from build job (FIXED: was using upload-artifact instead of download-artifact)
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: react-build
           path: build/
-       
-      # Step 2: Verify build files exist (optional debugging step)
-      - name: List build contents
-        run: |
-          echo "Contents of build directory:"
-          ls -la build/ || echo "Build directory not found"
-        
-      # Step 2: Verify build files exist (optional debugging step)
-      - name: Test Server Connection
-        run: |
-          echo "Testing connection to server..."
-          timeout 10 bash -c "</dev/tcp/${{ secrets.SERVER_IP }}/${{ secrets.SERVER_PORT }}" && echo "Connection successful" || echo "Connection failed"
 
-      # (inside your deploy job, before the appleboy/scp-action step)
-      - name: Install debug tools
+      - name: Verify build contents
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y dnsutils netcat-openbsd openssh-client sshpass
+          Write-Host "Build folder contents:"
+          Get-ChildItem -Path build
 
-      - name: Resolve DNS and show route
-        env:
-          HOST: ${{ secrets.SERVER_IP }}   # or SERVER_IP
+      - name: Install WinRM module
         run: |
-          echo "Resolve $HOST"
-          nslookup $HOST || true
-          echo "Host lookup (getent):"
-          getent hosts $HOST || true
+          Install-Module -Name PSRemotingTools -Force -AllowClobber -Scope CurrentUser
+          Install-Module -Name Posh-SSH -Force -AllowClobber -Scope CurrentUser
 
-      - name: SSH test (password)
-        env:
-          HOST: ${{ secrets.SERVER_IP }}
-          PORT: ${{ secrets.SERVER_PORT }}
-          USER: ${{ secrets.SERVER_USER }}
+      - name: Deploy files to IIS
+        shell: pwsh
         run: |
-          # Install sshpass above; then:
-          sshpass -p "${{ secrets.SERVER_PASS }}" ssh -oStrictHostKeyChecking=no -oConnectTimeout=10 -p "$PORT" "$USER@$HOST" 'echo SSH_OK' || (echo "SSH handshake failed" && exit 1)
+          Write-Host "Starting deployment to IIS server $env:IIS_HOST ..."
 
-      # Step 4: Deploy to IIS server
-      - name: Deploy to IIS Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASS }}
-          source: "build/*"
-          target: ${{ secrets.SERVER_PATH }}
-          port: ${{ secrets.SERVER_PORT }}
-          strip_components: 1  # This removes the 'build/' prefix from uploaded files
-          overwrite: true      # Overwrite existing files on the server
-          debug: true
+          # Securely create PSCredential object
+          $secPassword = ConvertTo-SecureString $env:IIS_PASSWORD -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($env:IIS_USER, $secPassword)
+
+          # Test WinRM connection
+          Write-Host "Testing connection to $env:IIS_HOST ..."
+          Test-WSMan -ComputerName $env:IIS_HOST -ErrorAction Stop
+          Write-Host "Connection successful."
+
+          # Create a PowerShell session to remote IIS server
+          $session = New-PSSession -ComputerName $env:IIS_HOST -Credential $cred -Authentication Default
+
+          # Copy files to IIS path
+          Write-Host "Copying React build files to $env:IIS_PATH ..."
+          Copy-Item -Path "build/*" -Destination $env:IIS_PATH -ToSession $session -Recurse -Force
+
+          # Optional: Restart IIS service
+          Invoke-Command -Session $session -ScriptBlock {
+              Write-Host "Restarting IIS..."
+              iisreset
+          }
+
+          # Close session
+          Remove-PSSession $session
+          Write-Host "✅ Deployment completed successfully."
