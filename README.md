@@ -8,7 +8,7 @@ Designed with a clean UI and premium user experience.
 
 ## 🚀 Live Demo
 
-🔗 Hosted Link: [https://your-live-link.netlify.app](https://fastipcheck.netlify.app/#lookup)
+🔗 Hosted Link: [https://fastipcheck.netlify.app](https://fastipcheck.netlify.app/#lookup)
 
 ---
 
