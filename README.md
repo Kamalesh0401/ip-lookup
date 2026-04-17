@@ -8,21 +8,25 @@ Designed with a clean UI and premium user experience.
 
 ## 🚀 Live Demo
 
-🔗 Hosted Link: https://your-live-link.netlify.app
+🔗 Hosted Link: [https://your-live-link.netlify.app](https://fastipcheck.netlify.app/#lookup)
 
 ---
 
 ## ✨ Features
 
 ✅ Search any IPv4 / IPv6 address  
+
 ✅ Detect your current public IP instantly  
+
 ✅ View Country, Region, City & Postal Code  
+
 ✅ ISP / Organization Details  
+
 ✅ Timezone Information  
+
 ✅ Hostname / Provider Lookup  
-✅ Search History with Local Storage  
-✅ Copy IP Address with One Click  
-✅ Responsive Design (Mobile + Desktop)  
+
+✅ Search History with Local Storage 
 
 ---
 
@@ -121,7 +125,7 @@ src/
 
 ## ⭐ Support
 
- If you like this project, give it a ⭐ on GitHub.
+ - If you like this project, give it a ⭐ on GitHub.
 
 ## 📄 License
 
