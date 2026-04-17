@@ -316,6 +316,7 @@ button {
 
 .quick-btn,
 .copy-btn,
+.lookup-btn,
 .btn-ghost {
   border: 1px solid rgba(255,255,255,0.07);
   padding: 10px 14px;
@@ -326,6 +327,7 @@ button {
 
 .quick-btn:hover,
 .copy-btn:hover,
+.lookup-btn:hover,
 .btn-ghost:hover {
   background: rgba(255,255,255,0.05);
 }
@@ -447,6 +449,34 @@ button {
   .location-status-row .location-text {
     white-space: normal;
   }
+}
+/* Social Icons Container */
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 16px;   /* space between icons */
+}
+
+/* Icon Style */
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+
+  font-size: 18px;
+  transition: 0.3s ease;
+}
+
+.social-icon:hover {
+  transform: translateY(-3px);
+  background: #3b82f6;
 }
 /* ===============================
    HISTORY
